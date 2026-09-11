@@ -31,9 +31,11 @@ Tracks the 7-day plan from [chart-library-project-brief.md](chart-library-projec
 - [ ] Bar/pie mark rendering, ResizeObserver responsive hookup — left for Day 3/6 as planned; `computeLayout()`/scales are already shared and type-agnostic so those days should mostly be adding a mark-rendering step, not new plumbing
 
 ## Day 3 — Expand chart types
-- [ ] Bar chart on core engine
-- [ ] Pie chart on core engine
-- [ ] Confirm shared scale/axis/tooltip code generalizes across chart types (no chart-type-specific config forks)
+- [x] Bar chart on core engine — grouped (default) and stacked (`series.bar.stacked`), reusing `computeLayout()`'s band/linear scales and axis rendering. Y-domain calculation is now chart-type-aware (`computeYDomain()`) to sum stacked values instead of taking a flat max.
+- [x] Pie chart on core engine — separate layout/render path (`computePieLayout`/`applyPieLayout`) since it has no axes; slice angle math and arc path generation live in `internal/arc.ts`, unit tested. Supports donut mode (`series.pie.innerRadius`) and inside/outside labels.
+- [x] Confirm shared scale/axis/tooltip code generalizes across chart types — line and bar share `computeLayout()`/axis rendering/tooltip/legend with no per-type forking there; only the mark-rendering step (`renderPoints` vs `renderBars`) and y-domain calc differ. Pie intentionally does not share axis code since it has none — reuses only color resolution, tooltip, and the legend pattern.
+- [x] Refactored `RenderState` to a single `seriesGroups: Map<id, <g>>` (each series gets one persistent wrapper element) instead of separate line-specific maps, so line and bar visibility-toggling and patch-vs-rebuild logic is now unified rather than duplicated per type
+- [x] Tests: bar rect count/stacked-domain/click, pie slice count/add-remove-category reference-equality (proves patch reuses existing `<path>` slices, not just line's)/click/legend — 58 tests total, all passing
 
 ## Day 4 — React wrapper
 - [ ] Container ref + instantiate core chart in effect hook

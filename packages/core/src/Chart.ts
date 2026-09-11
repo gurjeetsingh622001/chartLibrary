@@ -10,6 +10,7 @@ import type {
 import { createBandScale, createLinearScale, niceTicks, type BandScale, type Scale } from './internal/scale';
 import { resolveSeriesColor } from './internal/color';
 import { buildLinePath } from './internal/path';
+import { buildArcPath, computeSliceAngles, type Slice } from './internal/arc';
 import { mergeChartConfig } from './internal/mergeConfig';
 import { createSvgElement, setAttrs } from './internal/svg';
 
@@ -23,6 +24,14 @@ const DEFAULT_ANIMATION_DURATION = 400;
 interface PixelPoint<T> {
   x: number;
   y: number;
+  raw: DataPoint<T>;
+}
+
+interface BarRect<T> {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   raw: DataPoint<T>;
 }
 
@@ -45,11 +54,34 @@ interface Layout<T> {
 
 interface RenderState {
   svg: SVGSVGElement;
-  seriesPaths: Map<string, SVGPathElement>;
-  seriesPointGroups: Map<string, SVGGElement>;
+  seriesGroups: Map<string, SVGGElement>;
   gridGroup: SVGGElement;
   xAxisGroup: SVGGElement;
   yAxisGroup: SVGGElement;
+  titleText: SVGTextElement | null;
+  legendGroup: SVGGElement | null;
+}
+
+interface PieSlice<T> extends Slice {
+  color: string;
+  raw: DataPoint<T>;
+}
+
+interface PieLayout<T> {
+  width: number;
+  height: number;
+  cx: number;
+  cy: number;
+  radius: number;
+  innerRadius: number;
+  series: SeriesConfig<T>;
+  slices: PieSlice<T>[];
+}
+
+interface PieRenderState {
+  svg: SVGSVGElement;
+  slicePaths: Map<string, SVGPathElement>;
+  labelGroup: SVGGElement;
   titleText: SVGTextElement | null;
   legendGroup: SVGGElement | null;
 }
@@ -60,14 +92,17 @@ interface RenderState {
  * destroy() on unmount — this class has zero knowledge either framework
  * exists.
  *
- * Only the 'line' chart type renders for now; bar/pie share this same
- * scale/axis/tooltip machinery and are Day 3 work (see project brief).
+ * 'line' and 'bar' share the same axis/scale machinery (computeLayout) and
+ * only differ in how a series' marks are drawn. 'pie' has no axes and gets
+ * its own layout/render path (computePieLayout/applyPieLayout).
  */
 export class Chart<T = unknown> {
   private container: HTMLElement;
   private config: ChartConfig<T>;
   private listeners = new Map<keyof ChartEventMap<T>, Set<Listener>>();
   private state: RenderState | null = null;
+  private pieState: PieRenderState | null = null;
+  private mounted = false;
   private tooltipEl: HTMLDivElement | null = null;
 
   constructor(container: HTMLElement, config: ChartConfig<T>) {
@@ -78,7 +113,7 @@ export class Chart<T = unknown> {
 
   update(partial: ChartConfigUpdate<T>): void {
     const next = mergeChartConfig(this.config, partial);
-    const structural = !this.state || this.isStructuralChange(this.config, next);
+    const structural = !this.mounted || this.isStructuralChange(this.config, next);
     this.config = next;
     if (structural) {
       this.renderFull();
@@ -91,6 +126,8 @@ export class Chart<T = unknown> {
     this.listeners.clear();
     this.container.innerHTML = '';
     this.state = null;
+    this.pieState = null;
+    this.mounted = false;
     this.tooltipEl = null;
   }
 
@@ -124,8 +161,14 @@ export class Chart<T = unknown> {
   private renderFull(): void {
     this.container.innerHTML = '';
     this.state = null;
+    this.pieState = null;
+    this.mounted = false;
 
-    if (this.config.type !== 'line') {
+    if (this.config.type === 'pie') {
+      this.renderPieFull();
+      return;
+    }
+    if (this.config.type !== 'line' && this.config.type !== 'bar') {
       return;
     }
 
@@ -153,15 +196,15 @@ export class Chart<T = unknown> {
     plot.appendChild(yAxisGroup);
     plot.appendChild(xAxisGroup);
 
-    const seriesPaths = new Map<string, SVGPathElement>();
-    const seriesPointGroups = new Map<string, SVGGElement>();
+    const seriesGroups = new Map<string, SVGGElement>();
     for (const series of this.config.series) {
-      const path = createSvgElement('path', { fill: 'none' });
-      const pointGroup = createSvgElement('g', { class: 'chart-points' });
-      plot.appendChild(path);
-      plot.appendChild(pointGroup);
-      seriesPaths.set(series.id, path);
-      seriesPointGroups.set(series.id, pointGroup);
+      const group = createSvgElement('g', { class: 'chart-series' });
+      if (this.config.type === 'line') {
+        group.appendChild(createSvgElement('path', { fill: 'none' }));
+        group.appendChild(createSvgElement('g', { class: 'chart-points' }));
+      }
+      plot.appendChild(group);
+      seriesGroups.set(series.id, group);
     }
 
     let titleText: SVGTextElement | null = null;
@@ -186,14 +229,14 @@ export class Chart<T = unknown> {
 
     this.state = {
       svg,
-      seriesPaths,
-      seriesPointGroups,
+      seriesGroups,
       gridGroup,
       xAxisGroup,
       yAxisGroup,
       titleText,
       legendGroup,
     };
+    this.mounted = true;
 
     this.applyLayout(layout, { initialMount: true });
   }
@@ -214,11 +257,15 @@ export class Chart<T = unknown> {
     this.container.appendChild(svg);
   }
 
-  // --- Patch: reuses the existing <svg>/<path> elements and only updates
+  // --- Patch: reuses the existing <svg>/mark elements and only updates
   // their attributes. Runs on non-structural updates (new data values,
   // color/axis/tooltip/legend/title changes) — this is what makes update()
   // efficient instead of tearing the chart down and rebuilding it. ---
   private patch(): void {
+    if (this.config.type === 'pie') {
+      this.patchPie();
+      return;
+    }
     if (!this.state) {
       this.renderFull();
       return;
@@ -266,54 +313,59 @@ export class Chart<T = unknown> {
     const animationEnabled = this.config.animation?.enabled !== false;
     const duration = this.config.animation?.duration ?? DEFAULT_ANIMATION_DURATION;
     const easing = this.config.animation?.easing ?? 'ease';
+    const barRects = this.config.type === 'bar' ? this.computeBarRects(layout) : null;
 
     this.config.series.forEach((series, index) => {
-      const path = state.seriesPaths.get(series.id);
-      const pointGroup = state.seriesPointGroups.get(series.id);
-      if (!path || !pointGroup) return;
+      const group = state.seriesGroups.get(series.id);
+      if (!group) return;
 
       if (series.visible === false) {
-        path.style.display = 'none';
-        pointGroup.style.display = 'none';
+        group.style.display = 'none';
         return;
       }
-      path.style.display = '';
-      pointGroup.style.display = '';
+      group.style.display = '';
 
       const color = resolveSeriesColor(index, series.color, this.config.colors);
-      const points = layout.pixelPointsFor(series);
-      const d = buildLinePath(points, series.line?.curve ?? 'linear');
 
-      setAttrs(path, { stroke: color, 'stroke-width': series.line?.width ?? 2 });
-      if (series.line?.style === 'dashed') {
-        path.setAttribute('stroke-dasharray', '6 4');
-      } else {
-        path.removeAttribute('stroke-dasharray');
-      }
+      if (this.config.type === 'line') {
+        const path = group.querySelector('path') as SVGPathElement;
+        const pointGroup = group.querySelector('g.chart-points') as SVGGElement;
+        const points = layout.pixelPointsFor(series);
+        const d = buildLinePath(points, series.line?.curve ?? 'linear');
 
-      if (animationEnabled) {
-        path.style.transition = `d ${duration}ms ${easing}, opacity 200ms ease`;
-        path.setAttribute('d', d);
-        if (opts.initialMount) {
-          // Defer the fade-in by a frame so the browser paints the
-          // opacity:0 state first, otherwise there's nothing to transition
-          // from and the path just appears instantly. Subsequent d changes
-          // on an already-mounted path transition automatically since the
-          // `transition` property is already active on the element.
-          path.style.opacity = '0';
-          requestAnimationFrameSafe(() => {
-            path.style.opacity = '1';
-          });
+        setAttrs(path, { stroke: color, 'stroke-width': series.line?.width ?? 2 });
+        if (series.line?.style === 'dashed') {
+          path.setAttribute('stroke-dasharray', '6 4');
         } else {
-          path.style.opacity = '1';
+          path.removeAttribute('stroke-dasharray');
         }
-      } else {
-        path.style.transition = '';
-        path.style.opacity = '1';
-        path.setAttribute('d', d);
-      }
 
-      this.renderPoints(pointGroup, series, points, color);
+        if (animationEnabled) {
+          path.style.transition = `d ${duration}ms ${easing}, opacity 200ms ease`;
+          path.setAttribute('d', d);
+          if (opts.initialMount) {
+            // Defer the fade-in by a frame so the browser paints the
+            // opacity:0 state first, otherwise there's nothing to transition
+            // from and the path just appears instantly. Subsequent d changes
+            // on an already-mounted path transition automatically since the
+            // `transition` property is already active on the element.
+            path.style.opacity = '0';
+            requestAnimationFrameSafe(() => {
+              path.style.opacity = '1';
+            });
+          } else {
+            path.style.opacity = '1';
+          }
+        } else {
+          path.style.transition = '';
+          path.style.opacity = '1';
+          path.setAttribute('d', d);
+        }
+
+        this.renderPoints(pointGroup, series, points, color);
+      } else if (this.config.type === 'bar') {
+        this.renderBars(group, series, barRects?.get(series.id) ?? [], color);
+      }
     });
 
     if (state.titleText) {
@@ -351,6 +403,78 @@ export class Chart<T = unknown> {
       });
       circle.addEventListener('mouseleave', () => this.hideTooltip());
       group.appendChild(circle);
+    }
+  }
+
+  // Bar geometry for every series is computed together (not per-series in
+  // isolation) because a stacked layout needs a running per-category
+  // baseline shared across series.
+  private computeBarRects(layout: Layout<T>): Map<string, BarRect<T>[]> {
+    const result = new Map<string, BarRect<T>[]>();
+    if (!layout.xBand) return result;
+
+    const stacked = this.config.series.some((s) => s.bar?.stacked);
+    const numSeries = this.config.series.length;
+    const bandwidth = layout.xBand.bandwidth;
+    const zeroY = layout.yScale(0);
+    const cumulative = new Map<string, number>(layout.categories.map((c) => [c, 0]));
+
+    this.config.series.forEach((series, index) => {
+      const rects: BarRect<T>[] = [];
+      if (series.visible === false) {
+        result.set(series.id, rects);
+        return;
+      }
+      for (const point of cleanPoints(series.data)) {
+        const category = String(point.x);
+        const cx = layout.xBand!(category);
+        if (cx === undefined) continue;
+
+        let x: number;
+        let width: number;
+        let y0: number;
+        let y1: number;
+        if (stacked) {
+          width = bandwidth * 0.8;
+          x = cx - width / 2;
+          const base = cumulative.get(category) ?? 0;
+          const next = base + point.y;
+          cumulative.set(category, next);
+          y0 = layout.yScale(base);
+          y1 = layout.yScale(next);
+        } else {
+          const slotWidth = bandwidth / numSeries;
+          width = slotWidth * 0.8;
+          x = cx - bandwidth / 2 + index * slotWidth + (slotWidth - width) / 2;
+          y0 = zeroY;
+          y1 = layout.yScale(point.y);
+        }
+        rects.push({ x, y: Math.min(y0, y1), width, height: Math.abs(y1 - y0), raw: point });
+      }
+      result.set(series.id, rects);
+    });
+    return result;
+  }
+
+  private renderBars(group: SVGGElement, series: SeriesConfig<T>, rects: BarRect<T>[], color: string): void {
+    group.replaceChildren();
+    for (const rect of rects) {
+      const el = createSvgElement('rect', {
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+        fill: color,
+        rx: series.bar?.cornerRadius ?? 0,
+      });
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', () => this.emit('click', { point: rect.raw, series }));
+      el.addEventListener('mouseenter', () => {
+        this.emit('hover', { point: rect.raw, series });
+        this.showTooltip(rect.raw, series, rect.x + rect.width / 2, rect.y);
+      });
+      el.addEventListener('mouseleave', () => this.hideTooltip());
+      group.appendChild(el);
     }
   }
 
@@ -452,6 +576,194 @@ export class Chart<T = unknown> {
     });
   }
 
+  // --- Pie: no axes, so it gets its own layout and render path instead of
+  // going through computeLayout()/applyLayout() above. A pie chart plots
+  // one series' data points as slices (point.x -> label, point.y -> value);
+  // if multiple series are configured, only the first one with data is
+  // used — a pie has no meaning for more than one series at once. ---
+  private renderPieFull(): void {
+    const layout = this.computePieLayout();
+    if (!layout) {
+      this.renderEmptyState();
+      return;
+    }
+
+    const svg = createSvgElement('svg', {
+      width: layout.width,
+      height: layout.height,
+      viewBox: `0 0 ${layout.width} ${layout.height}`,
+    });
+    svg.style.display = 'block';
+    svg.style.maxWidth = '100%';
+
+    const labelGroup = createSvgElement('g', { class: 'chart-pie-labels' });
+    svg.appendChild(labelGroup);
+
+    let titleText: SVGTextElement | null = null;
+    if (this.config.title?.text) {
+      titleText = createSvgElement('text', {
+        x: layout.width / 2,
+        y: 18,
+        'text-anchor': 'middle',
+        'font-weight': 'bold',
+        fill: '#111827',
+      });
+      svg.appendChild(titleText);
+    }
+
+    let legendGroup: SVGGElement | null = null;
+    if (this.config.legend?.enabled) {
+      legendGroup = createSvgElement('g', { class: 'chart-legend' });
+      svg.appendChild(legendGroup);
+    }
+
+    this.container.appendChild(svg);
+
+    this.pieState = { svg, slicePaths: new Map(), labelGroup, titleText, legendGroup };
+    this.mounted = true;
+
+    this.applyPieLayout(layout, { initialMount: true });
+  }
+
+  private patchPie(): void {
+    if (!this.pieState) {
+      this.renderFull();
+      return;
+    }
+    const layout = this.computePieLayout();
+    if (!layout) {
+      this.renderFull();
+      return;
+    }
+    setAttrs(this.pieState.svg, {
+      width: layout.width,
+      height: layout.height,
+      viewBox: `0 0 ${layout.width} ${layout.height}`,
+    });
+    this.applyPieLayout(layout, { initialMount: false });
+  }
+
+  private applyPieLayout(layout: PieLayout<T>, opts: { initialMount: boolean }): void {
+    const state = this.pieState!;
+    const animationEnabled = this.config.animation?.enabled !== false;
+    const duration = this.config.animation?.duration ?? DEFAULT_ANIMATION_DURATION;
+    const easing = this.config.animation?.easing ?? 'ease';
+    const activeIds = new Set(layout.slices.map((s) => s.id));
+
+    for (const [id, path] of state.slicePaths) {
+      if (!activeIds.has(id)) {
+        path.remove();
+        state.slicePaths.delete(id);
+      }
+    }
+
+    for (const slice of layout.slices) {
+      let path = state.slicePaths.get(slice.id);
+      const isNew = !path;
+      if (!path) {
+        path = createSvgElement('path', { stroke: '#fff', 'stroke-width': 1 });
+        path.style.cursor = 'pointer';
+        state.svg.insertBefore(path, state.labelGroup);
+        state.slicePaths.set(slice.id, path);
+      }
+      setAttrs(path, { fill: slice.color });
+      const d = buildArcPath(layout.cx, layout.cy, layout.radius, layout.innerRadius, slice.startAngle, slice.endAngle);
+
+      if (animationEnabled) {
+        path.style.transition = `d ${duration}ms ${easing}, opacity 200ms ease`;
+        path.setAttribute('d', d);
+        if (isNew && opts.initialMount) {
+          path.style.opacity = '0';
+          const target = path;
+          requestAnimationFrameSafe(() => {
+            target.style.opacity = '1';
+          });
+        } else {
+          path.style.opacity = '1';
+        }
+      } else {
+        path.style.transition = '';
+        path.style.opacity = '1';
+        path.setAttribute('d', d);
+      }
+
+      // Assigned as properties (not addEventListener) so a slice that
+      // persists across patches doesn't accumulate a new listener on every
+      // update — each assignment replaces the previous handler.
+      path.onclick = () => this.emit('click', { point: slice.raw, series: layout.series });
+      path.onmouseenter = () => {
+        this.emit('hover', { point: slice.raw, series: layout.series });
+        const mid = (slice.startAngle + slice.endAngle) / 2;
+        const tx = layout.cx + Math.cos(mid) * layout.radius * 0.6;
+        const ty = layout.cy + Math.sin(mid) * layout.radius * 0.6;
+        this.showTooltip(slice.raw, layout.series, tx, ty);
+      };
+      path.onmouseleave = () => this.hideTooltip();
+    }
+
+    state.labelGroup.replaceChildren();
+    const labelPosition = layout.series.pie?.labelPosition ?? 'outside';
+    for (const slice of layout.slices) {
+      const mid = (slice.startAngle + slice.endAngle) / 2;
+      const labelRadius = labelPosition === 'inside' ? layout.radius * 0.65 : layout.radius + 14;
+      const text = createSvgElement('text', {
+        x: layout.cx + Math.cos(mid) * labelRadius,
+        y: layout.cy + Math.sin(mid) * labelRadius,
+        'text-anchor': 'middle',
+        'dominant-baseline': 'middle',
+        fill: labelPosition === 'inside' ? '#fff' : '#374151',
+        'font-size': 11,
+      });
+      text.textContent = slice.label;
+      state.labelGroup.appendChild(text);
+    }
+
+    if (state.titleText) {
+      state.titleText.textContent = this.config.title?.text ?? '';
+    }
+
+    if (state.legendGroup) {
+      state.legendGroup.replaceChildren();
+      let x = 8;
+      const y = layout.height - 8;
+      layout.slices.forEach((slice) => {
+        const item = createSvgElement('g');
+        item.appendChild(createSvgElement('rect', { x, y: y - 10, width: 10, height: 10, fill: slice.color }));
+        const text = createSvgElement('text', { x: x + 14, y, 'font-size': 11, fill: '#111827' });
+        text.textContent = slice.label;
+        item.appendChild(text);
+        state.legendGroup!.appendChild(item);
+        x += 14 + slice.label.length * 6 + 16;
+      });
+    }
+  }
+
+  private computePieLayout(): PieLayout<T> | null {
+    const series = this.config.series.find((s) => cleanPoints(s.data).length > 0);
+    if (!series) return null;
+    const points = cleanPoints(series.data).filter((p) => p.y > 0);
+    if (points.length === 0) return null;
+
+    const width = this.config.width ?? (this.container.clientWidth || DEFAULT_WIDTH);
+    const height = this.config.height ?? (this.container.clientHeight || DEFAULT_HEIGHT);
+    const titleSpace = this.config.title?.text ? 24 : 0;
+    const legendSpace = this.config.legend?.enabled ? 32 : 0;
+    const cx = width / 2;
+    const plotHeight = height - titleSpace - legendSpace;
+    const cy = titleSpace + plotHeight / 2;
+    const radius = Math.max(10, Math.min(width, plotHeight) / 2 - 16);
+    const innerRadius = (series.pie?.innerRadius ?? 0) * radius;
+
+    const angles = computeSliceAngles(points.map((p) => ({ id: String(p.x), label: String(p.x), value: p.y })));
+    const slices: PieSlice<T>[] = angles.map((slice, index) => ({
+      ...slice,
+      color: resolveSeriesColor(index, undefined, this.config.colors),
+      raw: points[index]!,
+    }));
+
+    return { width, height, cx, cy, radius, innerRadius, series, slices };
+  }
+
   private ensureTooltipEl(): HTMLDivElement {
     if (this.tooltipEl) return this.tooltipEl;
     const el = document.createElement('div');
@@ -511,15 +823,11 @@ export class Chart<T = unknown> {
     const plotRight = width - margin.right;
     const plotBottom = height - margin.bottom - (this.config.legend?.enabled ? 24 : 0);
 
-    const yValues = domainSeries.flatMap((s) => cleanPoints(s.data).map((p) => p.y));
-    const yMin = this.config.axis?.y?.min ?? Math.min(0, ...yValues);
-    const yMax = this.config.axis?.y?.max ?? Math.max(...yValues);
-    const yScale = createLinearScale([yMin, yMax], [plotBottom, plotTop]);
-    const yTicks = niceTicks(yMin, yMax, this.config.axis?.y?.tickCount ?? 5);
-
     // 'time' is treated as a numeric domain (timestamps), same as 'linear' —
-    // a v1 simplification; see AxisType in types.ts.
-    const xType = this.config.axis?.x?.type ?? inferAxisType(domainSeries);
+    // a v1 simplification; see AxisType in types.ts. Bar charts default to
+    // a category axis since bars plot discrete groups.
+    const xType =
+      this.config.axis?.x?.type ?? (this.config.type === 'bar' ? 'category' : inferAxisType(domainSeries));
     let categories: string[] = [];
     let xBand: BandScale | null = null;
     let xLinear: Scale | null = null;
@@ -537,6 +845,10 @@ export class Chart<T = unknown> {
       xDomain = [xMin, xMax];
       xLinear = createLinearScale([xMin, xMax], [plotLeft, plotRight]);
     }
+
+    const [yMin, yMax] = this.computeYDomain(domainSeries, categories);
+    const yScale = createLinearScale([yMin, yMax], [plotBottom, plotTop]);
+    const yTicks = niceTicks(yMin, yMax, this.config.axis?.y?.tickCount ?? 5);
 
     const pixelPointsFor = (series: SeriesConfig<T>): PixelPoint<T>[] => {
       const points = cleanPoints(series.data)
@@ -567,6 +879,24 @@ export class Chart<T = unknown> {
       xLinear,
       pixelPointsFor,
     };
+  }
+
+  private computeYDomain(domainSeries: SeriesConfig<T>[], categories: string[]): [number, number] {
+    if (this.config.type === 'bar' && domainSeries.some((s) => s.bar?.stacked)) {
+      const sums = categories.map((category) =>
+        domainSeries.reduce((sum, s) => {
+          const point = cleanPoints(s.data).find((p) => String(p.x) === category);
+          return sum + (point?.y ?? 0);
+        }, 0),
+      );
+      const min = this.config.axis?.y?.min ?? Math.min(0, ...sums);
+      const max = this.config.axis?.y?.max ?? Math.max(0, ...sums);
+      return [min, max];
+    }
+    const values = domainSeries.flatMap((s) => cleanPoints(s.data).map((p) => p.y));
+    const min = this.config.axis?.y?.min ?? Math.min(0, ...values);
+    const max = this.config.axis?.y?.max ?? Math.max(...values);
+    return [min, max];
   }
 }
 
