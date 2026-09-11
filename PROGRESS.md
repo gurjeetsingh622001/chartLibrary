@@ -7,14 +7,14 @@ Tracks the 7-day plan from [chart-library-project-brief.md](chart-library-projec
 - [ ] Where the case study gets published (README / blog post / Upwork profile)
 
 ## Day 0 — Setup
-- [ ] pnpm workspace scaffold (`packages/core`, `packages/react`, `packages/angular`, `apps/demo`)
-- [ ] Root tsconfig.base.json, pnpm-workspace.yaml
-- [ ] Define `ChartConfig` / `SeriesConfig` schema — series (with per-chart-type `line`/`bar`/`pie` slots), colors, axis (type + ticks/labels/gridlines), tooltip, legend, title, animation, margin, size (see "Config Object" section in brief). Locks the API shape early even though most fields only get hardcoded defaults at this stage.
-- [ ] Decide core event API shape: instance-level pub-sub (`chart.on`/`chart.off`) vs. config-only callbacks — this determines how React (`onDataPointClick` prop) and Angular (`@Output() dataPointClick`) both map onto the same underlying mechanism
-- [ ] Decide `update(partialConfig)` semantics: deep-merge partial config, diff old vs. new to pick the minimal action (repatch data / restyle / full relayout)
-- [ ] Decide empty/invalid data behavior (empty `series`, NaN/null points)
-- [ ] Pin React (18+) and Angular (latest stable, standalone component) target versions; set up ESLint + Prettier shared config
-- [ ] Add LICENSE file (MIT) at repo root
+- [x] pnpm workspace scaffold (`packages/core`, `packages/react`, `packages/angular`, `apps/demo`) — react/angular/demo are placeholders pending Day 4-6
+- [x] Root tsconfig.base.json, pnpm-workspace.yaml
+- [x] Define `ChartConfig` / `SeriesConfig` schema in `packages/core/src/types.ts` — series (with per-chart-type `line`/`bar`/`pie` slots), colors, axis (type + ticks/labels/gridlines), tooltip, legend, title, animation, margin, size. `install`/`build`/`test`/`lint` all verified working end to end.
+- [x] Decide core event API shape: went with instance-level pub-sub (`chart.on`/`chart.off`, see `packages/core/src/Chart.ts`) so React/Angular can each map it to their native idiom later
+- [x] Decide `update(partialConfig)` semantics: partial merge, typed as `ChartConfigUpdate`. Diffing to pick the minimal action (repatch data / restyle / full relayout) is still a Day 1-2 TODO — the shape is locked, the behavior isn't built yet.
+- [x] Decide empty/invalid data behavior: documented in the brief and left as a `// TODO (Day 1-2)` marker in `Chart.ts` — not implemented yet, decision recorded so it isn't forgotten
+- [x] Pin React (18+) and Angular (latest stable, standalone component) target versions; set up ESLint (flat config) + Prettier shared config — `pnpm lint` passes clean
+- [x] Add LICENSE file (MIT) at repo root
 
 ## Day 1-2 — Core engine
 - [ ] Data input handling
