@@ -17,16 +17,18 @@ Tracks the 7-day plan from [chart-library-project-brief.md](chart-library-projec
 - [x] Add LICENSE file (MIT) at repo root
 
 ## Day 1-2 — Core engine
-- [ ] Data input handling
-- [ ] Scale + axis calculation
-- [ ] SVG rendering for line chart
-- [ ] Basic animation
-- [ ] `update()` method
-- [ ] `destroy()` method
-- [ ] Default color palette + per-series color override wired into config
-- [ ] Axis config (type, tick count, label formatter, gridlines) wired into config
-- [ ] Tooltip hook (enabled flag + formatter callback) wired into config — styling deferred, hook must exist
-- [ ] Unit tests for scale calculation, tick generation, data-to-pixel mapping (Vitest)
+- [x] Data input handling — `cleanPoints()` skips points with missing/non-finite x or y instead of throwing (per the "empty/invalid data" decision)
+- [x] Scale + axis calculation — `internal/scale.ts` (linear scale, band scale, nice-number tick generation), fully unit tested
+- [x] SVG rendering for line chart — axis lines/ticks/labels, gridlines, per-series `<path>` (linear/step/monotone curve), point circles
+- [x] Basic animation — opacity fade-in on mount, CSS `transition` on `d` so subsequent updates animate
+- [x] `update()` method — real partial-merge + diff, not a stub: non-structural changes patch existing nodes (`patch()`), structural changes (series added/removed/reordered, type changed) rebuild (`renderFull()`)
+- [x] `destroy()` method
+- [x] Default color palette + per-series color override wired into config (`internal/color.ts`)
+- [x] Axis config (type, tick count, label formatter, gridlines) wired into config
+- [x] Tooltip hook wired into config and functional (hover shows formatter output or a default `name: value`, not just typed) — styling is inline/minimal, not the deferred full theming system
+- [x] Unit tests for scale calculation, tick generation, data-to-pixel mapping (Vitest) — plus tests proving the actual "patch, don't rebuild" behavior: same `<svg>`/`<path>` node references before/after a data-only `update()`, and a `<path>` count/`<svg>` reference change on a structural update
+- [x] Legend (render + click-to-toggle a series' visibility, calls `legend.onToggle`) and title rendering — Day 0 schema items, wired in now since the rendering pipeline needed them anyway
+- [ ] Bar/pie mark rendering, ResizeObserver responsive hookup — left for Day 3/6 as planned; `computeLayout()`/scales are already shared and type-agnostic so those days should mostly be adding a mark-rendering step, not new plumbing
 
 ## Day 3 — Expand chart types
 - [ ] Bar chart on core engine
