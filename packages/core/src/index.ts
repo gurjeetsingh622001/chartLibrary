@@ -1,0 +1,20 @@
+export { Chart } from './Chart';
+export type {
+  AxisConfig,
+  AxisType,
+  AnimationConfig,
+  BarSeriesStyle,
+  ChartConfig,
+  ChartConfigUpdate,
+  ChartEventHandler,
+  ChartEventMap,
+  ChartType,
+  DataPoint,
+  LegendConfig,
+  LineSeriesStyle,
+  MarginConfig,
+  PieSeriesStyle,
+  SeriesConfig,
+  TitleConfig,
+  TooltipConfig,
+} from './types';

@@ -1,0 +1,33 @@
+{
+  "name": "@chart-lib/angular",
+  "version": "0.1.0",
+  "description": "Angular wrapper for the chart engine. Implementation scheduled for Day 5 (see PROGRESS.md) — will need proper Angular library tooling (ng-packagr) set up at that point rather than the plain tsup build used here as a placeholder. PLACEHOLDER package name — rename once the library name is decided.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "license": "MIT",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@angular/core": ">=18.0.0"
+  },
+  "dependencies": {
+    "@chart-lib/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}
