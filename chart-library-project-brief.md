@@ -30,6 +30,40 @@ Core principle: the engine must work correctly with zero knowledge that React or
   - core package — the rendering engine
   - react package — React wrapper
   - angular package — Angular wrapper
+- React target: React 18+ (functional component, hooks-based; matches the StrictMode double-invoke handling already in scope)
+- Angular target: latest stable major, standalone component (no NgModule) — simpler for consumers to adopt and avoids tying the wrapper's install story to a specific module setup. Pin the exact version once Day 5 starts; declare it as a `peerDependencies` range (not a regular dependency) in the angular package, same for react/react-dom in the react package.
+- Linting/formatting: ESLint + Prettier, shared config at the workspace root so all three packages format consistently
+
+## Config Object — What to Lock In Early
+
+The config object is the contract both wrappers depend on. In TypeScript, adding a *new optional field* to it later is not a breaking change — existing consumers keep working. What breaks things is restructuring a field that already shipped (e.g. `tooltip: boolean` becoming `tooltip: { enabled, formatter }`). So the filter for "decide now" isn't "will we eventually need this" — almost everything eventually gets used — it's "do we know this field's shape well enough to not have to restructure it later." Applied across the full surface, not just color/tooltip/axis:
+
+**Lock the shape now** (typed in `ChartConfig` / `SeriesConfig` from Day 1, most shipped with hardcoded defaults and no real behavior yet):
+- `series` — array of `{ id, name, data, color?, visible? }`, plus a per-chart-type nested slot (`line?`, `bar?`, `pie?`) so chart-type-specific options (line curve/style, point markers, bar stacking/corner radius, pie inner radius/label position) have a home without fighting each other in one flat namespace
+- `colors` — default palette array, plus per-series override
+- `axis.x` / `axis.y` — **type first** (`category` / `linear` / `time` — this decides which scale math the engine uses, it's not a cosmetic option), then tick count, label formatter, gridlines toggle, axis title, min/max
+- `tooltip` — enabled flag, `shared` (all series at hovered x, relevant once there's >1 series), formatter callback
+- `legend` — enabled flag, position (top/bottom/left/right); if it exists at all it needs a position enum decided up front, since retrofitting "legend can now go on the side" after CSS is written for "always below the chart" is a real rework
+- `title` — text + position
+- `animation` — enabled flag, duration, easing
+- `margin` — top/right/bottom/left (chart area vs. container — layout engine needs this concept from day one even if the default is fixed)
+- **Event API shape, not just event fields** — decide whether the core instance exposes pub-sub methods (`chart.on('click', handler)` / `chart.off(...)`) versus callbacks only inside the config object. This is the piece the wrappers actually hinge on: a pub-sub core lets React map to props (`onDataPointClick`) and Angular map to `@Output() dataPointClick` from the exact same underlying mechanism, which is the "idiomatic in both frameworks" promise this project is built around. Deciding this after the render loop exists is expensive to retrofit.
+- `series[].data` point shape — `{ x, y }` at minimum, plus whether it's generic (`data: T[]`) so a formatter/click handler can read caller-supplied metadata off a point. Cheap to decide now, awkward to widen later since it touches every chart-type renderer.
+- `width` / `height` / responsive flag
+- **`update(partialConfig)` semantics** — this is what "efficient update, no rebuild" actually means in code, so it can't stay implicit. Decide: `update()` takes a *partial* config and deep-merges it into the existing one (not a full replace), and the engine diffs old vs. new to decide the minimal action — new `data` on an existing series → repatch points and re-run enter/update/exit, not a full relayout; a changed `color` → restyle only; a changed chart `type` or added/removed series → full relayout. Without this decision made explicit, "lightweight diffing" (already flagged under Known Challenges) has no contract to diff against.
+- **Empty / invalid data behavior** — what renders when `series` is `[]`, or a data point has `NaN`/`null`/missing values. Pick one now (e.g. render an empty-state placeholder for no data, skip/gap for individual bad points rather than throwing) so it's a designed behavior, not whatever happens to fall out of the scale math.
+
+**Safe to add later as new optional fields** (genuinely additive, no restructuring risk, can wait until there's a real use case):
+- secondary/multiple y-axes
+- locale-aware number/date formatting defaults
+- crosshair, zoom/pan
+- legend item click-to-toggle-series behavior (the `legend` object exists already above; `onToggle` is just one more optional field on it)
+
+**Explicitly deferred** (already listed under Future Enhancements below, and now also not silently missing from the schema conversation):
+- Full CSS-variable/token-based theming system
+- Rich tooltip HTML templates
+- Per-element style overrides beyond color
+- Accessibility (ARIA labels, data table fallback) — note as a known gap, not a decision that's been made and forgotten
 
 ## Scope for Portfolio Version (One Week Plan)
 
@@ -55,10 +89,17 @@ Day 5: Angular wrapper
 Day 6: Polish and demo page
 - Single demo page showing all chart types rendered identically in both React and Angular side by side
 - Basic responsive handling (ResizeObserver)
+- **A live-update scenario is required, not optional** — e.g. a "push new data point" / "randomize data" button running on an interval, shown on both the React and Angular versions of the same chart. This is the only place in the whole project that actually demonstrates the core differentiator (update patches in place, no teardown/rebuild); without it, the case study is asserting the claim rather than showing it. Worth pairing with something visible in the browser (e.g. a DevTools recording, or simply pointing out via a counter that other elements on the page — like a running clock — keep animating smoothly through a chart update, which they wouldn't if the whole SVG were being torn down)
 
 Day 7: Documentation and case study
 - Short written case study: problem solved, why cross-framework consistency matters, code snippets
 - README with setup instructions, architecture explanation, and screenshots/GIFs of the demo
+
+## Testing Strategy
+Not in the original day-by-day plan, but worth stating explicitly since the whole pitch is "clean architecture" — shipping untested scale/axis math undercuts that. Minimum bar for a portfolio version:
+- Unit tests for the core engine's pure logic (scale calculation, tick generation, data-to-pixel mapping) — this is the highest bug-risk, easiest-to-test part of the whole project, and a natural thing to point to in the case study
+- Skip DOM/snapshot testing of SVG output and wrapper integration tests — good to have, not worth the time inside a one-week scope
+- Vitest is a reasonable default (fast, works cleanly in a TS monorepo without extra config)
 
 ## Known Challenges To Watch For
 - Reactive updates without a framework: core engine needs its own lightweight diffing so updates are efficient regardless of what triggers them
@@ -76,6 +117,10 @@ Day 7: Documentation and case study
 - Accessibility pass (ARIA, keyboard navigation, data table fallback)
 - Theming system via CSS variables or token-based config
 
+
+## Open Decisions (need your input, not something to silently default)
+- **Library name** — still TBD in the Goal section. Needed before Day 7 (README, case study, npm scope) and ideally before Day 0 (repo/package naming), so it's worth settling early rather than retrofitting a name in everywhere later.
+- **Where the case study gets published** — the goal is an Upwork portfolio piece, but the brief doesn't say whether the case study lives in the repo README, a separate blog post/Medium article, or gets attached directly to an Upwork profile/proposal. Affects how much the Day 7 writeup should stand alone vs. link back to the repo.
 
 ## Repository Folder Structure
 
@@ -104,6 +149,8 @@ Each package under packages has its own package.json, its own build output, and 
 ## Publishing the Library (npm)
 
 Steps to publish the packages so others can install them:
+
+0. License: add a LICENSE file at the repo root (MIT is the standard default for a portfolio/open-source library) and a matching `license` field in each package.json — npm flags packages with no license, which is a bad first impression on a page meant to build credibility.
 
 1. Naming: pick a scoped npm name to avoid collisions, for example at-yourname-slash-core, at-yourname-slash-react, at-yourname-slash-angular. Scoped names are free on npm for public packages.
 
