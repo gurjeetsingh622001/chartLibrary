@@ -28,7 +28,7 @@ Tracks the 7-day plan from [chart-library-project-brief.md](chart-library-projec
 - [x] Tooltip hook wired into config and functional (hover shows formatter output or a default `name: value`, not just typed) — styling is inline/minimal, not the deferred full theming system
 - [x] Unit tests for scale calculation, tick generation, data-to-pixel mapping (Vitest) — plus tests proving the actual "patch, don't rebuild" behavior: same `<svg>`/`<path>` node references before/after a data-only `update()`, and a `<path>` count/`<svg>` reference change on a structural update
 - [x] Legend (render + click-to-toggle a series' visibility, calls `legend.onToggle`) and title rendering — Day 0 schema items, wired in now since the rendering pipeline needed them anyway
-- [ ] Bar/pie mark rendering, ResizeObserver responsive hookup — left for Day 3/6 as planned; `computeLayout()`/scales are already shared and type-agnostic so those days should mostly be adding a mark-rendering step, not new plumbing
+- [x] Bar/pie mark rendering, ResizeObserver responsive hookup — done on schedule in Day 3 and Day 6 respectively, as planned here; `computeLayout()`/scales turned out to be shared and type-agnostic as anticipated, so those days mostly added a mark-rendering step rather than new plumbing
 
 ## Day 3 — Expand chart types
 - [x] Bar chart on core engine — grouped (default) and stacked (`series.bar.stacked`), reusing `computeLayout()`'s band/linear scales and axis rendering. Y-domain calculation is now chart-type-aware (`computeYDomain()`) to sum stacked values instead of taking a flat max.
@@ -84,5 +84,4 @@ Tracks the 7-day plan from [chart-library-project-brief.md](chart-library-projec
 - [ ] Secondary/multiple y-axes
 - [ ] Locale-aware number/date formatting defaults
 - [ ] Crosshair, zoom/pan
-- [ ] Legend click-to-toggle-series behavior (`legend.onToggle`)
 - [ ] npm publish (optional but a strong credibility signal if done)
