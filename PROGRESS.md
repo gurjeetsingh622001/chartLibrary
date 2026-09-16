@@ -38,10 +38,14 @@ Tracks the 7-day plan from [chart-library-project-brief.md](chart-library-projec
 - [x] Tests: bar rect count/stacked-domain/click, pie slice count/add-remove-category reference-equality (proves patch reuses existing `<path>` slices, not just line's)/click/legend — 58 tests total, all passing
 
 ## Day 4 — React wrapper
-- [ ] Container ref + instantiate core chart in effect hook
-- [ ] Update on prop changes (no full teardown/rebuild)
-- [ ] Destroy on unmount
-- [ ] StrictMode double-invoke guard
+- [x] Container ref + instantiate core chart in effect hook (`packages/react/src/Chart.tsx`)
+- [x] Update on prop changes (no full teardown/rebuild) — a separate effect calls `chart.update(config)`, mount effect has empty deps so the instance is never recreated on prop changes; skips the redundant no-op update on initial mount
+- [x] Destroy on unmount
+- [x] StrictMode double-invoke guard — no guard flag needed; destroy() fully tears down the container/listeners so re-running the mount effect is idempotent by construction (a skip-flag would just mask what StrictMode is trying to surface). Verified with a test that renders inside `<StrictMode>` and asserts exactly one `<svg>`/`<path>` exists, not zero or two.
+- [x] `onDataPointClick`/`onDataPointHover` props map onto the core's `chart.on`/`chart.off` pub-sub — the cross-framework event API decision from Day 0 paying off as intended
+- [x] Dev tooling: `eslint-plugin-react-hooks` added (workspace-wide config, scoped to `packages/react/**`) so `exhaustive-deps` actually enforces the intentional mount-effect dependency omission rather than silently drifting
+- [x] Test setup resolves `@chart-lib/core` to its source via a Vite alias (`packages/react/vitest.config.ts`) rather than requiring core to be built first — `pnpm test` works standalone on a fresh checkout; `tsc --noEmit` still typechecks against core's built `.d.ts` (its public surface), so build order only matters for typecheck, not tests
+- [x] 8 tests: mount/StrictMode/patch-in-place/structural-rebuild/destroy/event wiring (click, hover, and handler removal)
 
 ## Day 5 — Angular wrapper
 - [ ] Component with ElementRef
