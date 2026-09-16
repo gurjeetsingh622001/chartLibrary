@@ -1,7 +1,7 @@
 {
   "name": "@chart-lib/angular",
   "version": "0.1.0",
-  "description": "Angular wrapper for the chart engine. Implementation scheduled for Day 5 (see PROGRESS.md) — will need proper Angular library tooling (ng-packagr) set up at that point rather than the plain tsup build used here as a placeholder. PLACEHOLDER package name — rename once the library name is decided.",
+  "description": "Angular wrapper for the chart engine — a standalone component that runs the core engine's DOM/event work outside Angular's zone (see chart.component.ts) and re-enters it only to emit @Output events. Still built with tsup as a placeholder; publishing this for real needs ng-packagr, tracked in PROGRESS.md. PLACEHOLDER package name — rename once the library name is decided.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -17,7 +17,8 @@
   "license": "MIT",
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
     "@angular/core": ">=18.0.0"
@@ -26,6 +27,8 @@
     "@chart-lib/core": "workspace:*"
   },
   "devDependencies": {
+    "@angular/core": "^18.2.0",
+    "happy-dom": "^15.11.7",
     "tsup": "^8.3.5",
     "typescript": "^5.6.3",
     "vitest": "^2.1.4"

@@ -48,10 +48,14 @@ Tracks the 7-day plan from [chart-library-project-brief.md](chart-library-projec
 - [x] 8 tests: mount/StrictMode/patch-in-place/structural-rebuild/destroy/event wiring (click, hover, and handler removal)
 
 ## Day 5 — Angular wrapper
-- [ ] Component with ElementRef
-- [ ] `ngOnChanges` → update
-- [ ] `ngOnDestroy` → destroy, verify no leaks
-- [ ] Confirm no conflicts between core render loop and zone.js/change detection
+- [x] Standalone component using the host element itself as the container (no `@ViewChild`/template needed — `ElementRef` in the constructor already refers to the host), `ngAfterViewInit` creates the chart
+- [x] `ngOnChanges` → `update()` — guarded by `if (!this.chart ...)`, which naturally skips the very first change (the constructor call in `ngAfterViewInit` hasn't run yet on Angular's first `ngOnChanges`, so there's nothing to patch), no separate "is this the first call" flag needed unlike the React wrapper
+- [x] `ngOnDestroy` → `destroy()`, chart reference cleared
+- [x] Confirmed no conflicts between core render loop and zone.js/change detection — this was the real work of the day, not just a checkbox: zone.js globally patches `addEventListener`/`requestAnimationFrame`, so without care every chart hover/click and mount-fade animation frame would trigger a full Angular change-detection pass. All core instantiation/update/destroy work runs inside `ngZone.runOutsideAngular()`; only the `@Output` emissions (`dataPointClick`/`dataPointHover`) explicitly re-enter via `ngZone.run()`. Verified in tests with a fake `NgZone` asserting `runOutsideAngular`/`run` are actually called, not just present in the type signature.
+- [x] SSR guard: platform check (`platformId === 'browser'`) skips chart creation entirely on the server — cheap to add, and Angular Universal (unlike React) actually runs lifecycle hooks server-side, so this one is a real gap if skipped, not a hypothetical
+- [x] **Real finding**: importing `isPlatformBrowser` from `@angular/common` failed at module load ("JIT compilation failed for injectable `PlatformNavigation`") — `@angular/common`'s Ivy partially-compiled output needs the Angular Linker or the JIT compiler to load outside a full Angular CLI build pipeline. Since `isPlatformBrowser` is a one-line check internally, inlined it (`platformId === 'browser'`) and dropped the `@angular/common` dependency entirely rather than pulling in `@angular/compiler` just to work around it.
+- [x] **Known gap, tracked not hidden**: still built with tsup as a placeholder, same as the react/angular scaffold from Day 0. A real publishable Angular library needs `ng-packagr` (Ivy partial compilation + Angular Linker-compatible output) — tsup output works for this repo's own demo app (consumed via the pnpm workspace, source-adjacent) but is not what a consumer installing this from npm would need. Tracked under Day 7 publishing readiness, not silently deferred.
+- [x] Tests (9): chart creation via host element, SSR no-op, `runOutsideAngular` actually invoked, `ngOnChanges` skip-before-mount and patch-after-mount, unrelated-change no-op, destroy clears host, click/hover emit through `ngZone.run`
 
 ## Day 6 — Polish and demo page
 - [ ] Demo page: all chart types, React and Angular side by side
@@ -63,6 +67,7 @@ Tracks the 7-day plan from [chart-library-project-brief.md](chart-library-projec
 - [ ] Written case study (problem, why cross-framework consistency matters, code snippets)
 - [ ] Root README (setup, architecture, screenshots/GIFs)
 - [ ] Per-package README (core, react, angular) with install + minimal usage example
+- [ ] If actually publishing the angular package: swap its tsup build for `ng-packagr` (needed for Ivy partial-compilation/Angular Linker-compatible output — see Day 5 notes). Not required for the demo app, which consumes it via the pnpm workspace directly.
 
 ## Deferred (post-portfolio, not week-1 scope)
 - [ ] Canvas/WebGL rendering mode
