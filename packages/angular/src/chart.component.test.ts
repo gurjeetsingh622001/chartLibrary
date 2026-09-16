@@ -1,7 +1,7 @@
 /** @vitest-environment happy-dom */
 import type { NgZone } from '@angular/core';
 import { describe, expect, it, vi } from 'vitest';
-import type { ChartConfig } from '@chart-lib/core';
+import type { ChartConfig } from '@sulacharts/core';
 import { ChartComponent } from './chart.component';
 
 // A real NgZone requires zone.js loaded globally, which would pull a

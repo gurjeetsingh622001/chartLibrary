@@ -1,13 +1,13 @@
-# @chart-lib/angular *(placeholder name)*
+# @sulacharts/angular
 
-Angular wrapper for [`@chart-lib/core`](../core) — a standalone `ChartComponent`. See the [project README](../../README.md) and [case study](../../docs/CASE_STUDY.md), which covers the zone.js handling this package exists to get right.
+Angular wrapper for [`@sulacharts/core`](../core) — a standalone `ChartComponent`. See the [project README](../../README.md) and [case study](../../docs/CASE_STUDY.md), which covers the zone.js handling this package exists to get right.
 
-Not published to npm yet — see [Open Decisions](../../chart-library-project-brief.md#open-decisions-need-your-input-not-something-to-silently-default) in the project brief. **Also not npm-publish-ready as built**: this package currently builds with `tsup`/esbuild rather than `ng-packagr`, which a real Angular library needs for proper Ivy partial-compilation output. It works when consumed within this repo's own pnpm workspace (as `apps/demo` does) — see [PROGRESS.md](../../PROGRESS.md) (Day 5/6) for what that gap did and didn't affect.
+**Not published to npm — held back deliberately.** This package builds with `tsup`/esbuild rather than `ng-packagr`, which real Angular libraries need for proper Ivy partial-compilation output. Confirmed concretely (not just theorized): the built package requires the consuming app to have `@angular/compiler` loaded at runtime, which a typical Angular CLI production (AOT) build strips out by default — so as published today, this would likely fail in a standard production Angular app. `@sulacharts/core` and `@sulacharts/react` don't have this problem and are published; this one is tracked in [PROGRESS.md](../../PROGRESS.md) pending the `ng-packagr` migration. It does work when consumed within this repo's own pnpm workspace (as `apps/demo` does), which is a different, weaker bar.
 
-## Install
+## Install (once published)
 
 ```
-pnpm add @chart-lib/angular @chart-lib/core
+pnpm add @sulacharts/angular @sulacharts/core
 ```
 
 Peer dependency: `@angular/core` `>=18.0.0`.
@@ -16,15 +16,15 @@ Peer dependency: `@angular/core` `>=18.0.0`.
 
 ```ts
 import { Component } from '@angular/core';
-import { ChartComponent } from '@chart-lib/angular';
-import type { ChartConfig } from '@chart-lib/core';
+import { ChartComponent } from '@sulacharts/angular';
+import type { ChartConfig } from '@sulacharts/core';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [ChartComponent],
   template: `
-    <chart-lib [config]="config" (dataPointClick)="onClick($event)"></chart-lib>
+    <sula-chart [config]="config" (dataPointClick)="onClick($event)"></sula-chart>
   `,
 })
 export class DashboardComponent {

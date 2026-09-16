@@ -1,13 +1,13 @@
-# @chart-lib/react *(placeholder name)*
+# @sulacharts/react
 
-React wrapper for [`@chart-lib/core`](../core) — a thin `<Chart>` component that only manages instantiation, patching on prop changes, and cleanup. All rendering logic lives in the core engine. See the [project README](../../README.md) and [case study](../../docs/CASE_STUDY.md).
+React wrapper for [`@sulacharts/core`](../core) — a thin `<Chart>` component that only manages instantiation, patching on prop changes, and cleanup. All rendering logic lives in the core engine. See the [project README](../../README.md) and [case study](../../docs/CASE_STUDY.md).
 
-Not published to npm yet — see [Open Decisions](../../chart-library-project-brief.md#open-decisions-need-your-input-not-something-to-silently-default) in the project brief.
+Not published to npm yet.
 
 ## Install
 
 ```
-pnpm add @chart-lib/react @chart-lib/core
+pnpm add @sulacharts/react @sulacharts/core
 ```
 
 Peer dependencies: `react` and `react-dom` `^18.0.0`.
@@ -16,8 +16,8 @@ Peer dependencies: `react` and `react-dom` `^18.0.0`.
 
 ```tsx
 import { useState } from 'react';
-import { Chart } from '@chart-lib/react';
-import type { ChartConfig } from '@chart-lib/core';
+import { Chart } from '@sulacharts/react';
+import type { ChartConfig } from '@sulacharts/core';
 
 const config: ChartConfig = {
   type: 'line',

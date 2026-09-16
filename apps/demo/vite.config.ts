@@ -13,9 +13,9 @@ export default defineConfig({
       // same reasoning as packages/react/vitest.config.ts — lets the demo
       // run on a fresh checkout without requiring every package to be
       // built first.
-      '@chart-lib/core': path.resolve(dirname, '../../packages/core/src/index.ts'),
-      '@chart-lib/react': path.resolve(dirname, '../../packages/react/src/index.ts'),
-      '@chart-lib/angular': path.resolve(dirname, '../../packages/angular/src/index.ts'),
+      '@sulacharts/core': path.resolve(dirname, '../../packages/core/src/index.ts'),
+      '@sulacharts/react': path.resolve(dirname, '../../packages/react/src/index.ts'),
+      '@sulacharts/angular': path.resolve(dirname, '../../packages/angular/src/index.ts'),
     },
   },
 });

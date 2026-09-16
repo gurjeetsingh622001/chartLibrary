@@ -1,7 +1,7 @@
 {
-  "name": "@chart-lib/react",
+  "name": "@sulacharts/react",
   "version": "0.1.0",
-  "description": "React wrapper for the chart engine — a thin binding over the framework-agnostic core (mount/update/destroy lifecycle only). PLACEHOLDER package name — rename once the library name is decided.",
+  "description": "React wrapper for SulaCharts — a thin binding over the framework-agnostic core (mount/update/destroy lifecycle only).",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -25,7 +25,7 @@
     "react-dom": "^18.0.0"
   },
   "dependencies": {
-    "@chart-lib/core": "workspace:*"
+    "@sulacharts/core": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

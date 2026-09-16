@@ -1,6 +1,6 @@
-# Building a chart library where React and Angular aren't an afterthought
+# SulaCharts: building a chart library where React and Angular aren't an afterthought
 
-*A portfolio project. Working name pending — see [README](../README.md).*
+*A portfolio project. See [README](../README.md).*
 
 ## The problem
 

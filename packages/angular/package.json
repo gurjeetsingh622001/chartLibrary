@@ -1,7 +1,7 @@
 {
-  "name": "@chart-lib/angular",
+  "name": "@sulacharts/angular",
   "version": "0.1.0",
-  "description": "Angular wrapper for the chart engine — a standalone component that runs the core engine's DOM/event work outside Angular's zone (see chart.component.ts) and re-enters it only to emit @Output events. Still built with tsup as a placeholder; publishing this for real needs ng-packagr, tracked in PROGRESS.md. PLACEHOLDER package name — rename once the library name is decided.",
+  "description": "Angular wrapper for SulaCharts — a standalone component that runs the core engine's DOM/event work outside Angular's zone (see chart.component.ts) and re-enters it only to emit @Output events. Still built with tsup as a placeholder; publishing this for real needs ng-packagr, tracked in PROGRESS.md — held back from the initial npm publish for that reason.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -24,7 +24,7 @@
     "@angular/core": ">=18.0.0"
   },
   "dependencies": {
-    "@chart-lib/core": "workspace:*"
+    "@sulacharts/core": "workspace:*"
   },
   "devDependencies": {
     "@angular/core": "^18.2.0",

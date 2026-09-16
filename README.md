@@ -1,4 +1,4 @@
-# ChartLib *(working name — not final, see below)*
+# SulaCharts
 
 A lightweight, framework-agnostic SVG charting engine with genuinely idiomatic React and Angular bindings — built as a portfolio piece to demonstrate architecture, not to compete with Highcharts or ECharts on feature breadth.
 
@@ -36,19 +36,19 @@ Supports line, bar (grouped or stacked), and pie/donut charts, plus color/axis/t
 
 ## Status
 
-Days 0–6 of the original 7-day build are done — see [PROGRESS.md](PROGRESS.md) for the full day-by-day log, including every gap that got found and fixed along the way rather than glossed over. [chart-library-project-brief.md](chart-library-project-brief.md) has the original scope and architecture decisions.
+The original 7-day build (Day 0–7) is done — see [PROGRESS.md](PROGRESS.md) for the full day-by-day log, including every gap that got found and fixed along the way rather than glossed over. [chart-library-project-brief.md](chart-library-project-brief.md) has the original scope and architecture decisions.
 
-**Still open**, and not something to quietly default: the library's final name, and where the [case study](docs/CASE_STUDY.md) gets published (this README, a separate blog post, or an Upwork profile).
+**Still open**: where the [case study](docs/CASE_STUDY.md) gets published (this README, a separate blog post, or an Upwork profile).
 
 ## Packages
 
 | Package | | |
 |---|---|---|
-| [`packages/core`](packages/core) | the rendering engine | [README](packages/core/README.md) |
-| [`packages/react`](packages/react) | React wrapper | [README](packages/react/README.md) |
-| [`packages/angular`](packages/angular) | Angular wrapper | [README](packages/angular/README.md) |
+| [`@sulacharts/core`](packages/core) | the rendering engine | [README](packages/core/README.md) |
+| [`@sulacharts/react`](packages/react) | React wrapper | [README](packages/react/README.md) |
+| [`@sulacharts/angular`](packages/angular) | Angular wrapper — held back, see its README | [README](packages/angular/README.md) |
 
-None of these are published to npm yet — package names above are placeholders (`@chart-lib/*`) pending the naming decision. Until then, consume them via the pnpm workspace (`workspace:*`), as the demo app does.
+Not published to npm yet — `core` and `react` are ready to be; `angular` is deliberately held back until it's built with `ng-packagr` instead of tsup (see its README for why). Until published, consume all three via the pnpm workspace (`workspace:*`), as the demo app does.
 
 ## Local development
 

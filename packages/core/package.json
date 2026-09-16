@@ -1,7 +1,7 @@
 {
-  "name": "@chart-lib/core",
+  "name": "@sulacharts/core",
   "version": "0.1.0",
-  "description": "Framework-agnostic SVG charting engine (PLACEHOLDER package name — rename once the library name is decided, see \"Open Decisions\" in the project brief).",
+  "description": "Framework-agnostic SVG charting engine — the core of SulaCharts.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

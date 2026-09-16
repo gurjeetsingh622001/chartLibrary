@@ -1,7 +1,7 @@
 # Cross-Framework Chart Library — Project Brief
 
 ## Goal
-Build a lightweight, framework-agnostic charting library (working name: TBD) as an Upwork portfolio project. The library's core rendering engine is written in plain TypeScript and rendered as SVG, with thin, idiomatic wrapper packages for React and Angular. The goal is not to compete with Highcharts/ECharts on feature breadth, but to demonstrate strong architecture, cross-framework compatibility, and clean rendering code as a portfolio piece.
+Build a lightweight, framework-agnostic charting library (named **SulaCharts**, decided after the initial build — see "Open Decisions" below) as an Upwork portfolio project. The library's core rendering engine is written in plain TypeScript and rendered as SVG, with thin, idiomatic wrapper packages for React and Angular. The goal is not to compete with Highcharts/ECharts on feature breadth, but to demonstrate strong architecture, cross-framework compatibility, and clean rendering code as a portfolio piece.
 
 ## Differentiation / Why Build This
 Existing chart libraries (Highcharts, ECharts, Chart.js, Nivo, Recharts, Visx, ApexCharts) are mature and cover most use cases, but a consistent, validated pain point across developer forums and GitHub issues is:
@@ -119,7 +119,7 @@ Not in the original day-by-day plan, but worth stating explicitly since the whol
 
 
 ## Open Decisions (need your input, not something to silently default)
-- **Library name** — still TBD in the Goal section. Needed before Day 7 (README, case study, npm scope) and ideally before Day 0 (repo/package naming), so it's worth settling early rather than retrofitting a name in everywhere later.
+- **Library name** — ~~still TBD~~ **resolved: SulaCharts.** Decided after Day 7 rather than before Day 0 as this section originally recommended — retrofitting the name into every package, import path, config file, and doc afterward (rather than settling it early) was the actual cost of deferring this, exactly as anticipated below. `@sulacharts/*` scope, `<sula-chart>` Angular selector.
 - **Where the case study gets published** — the goal is an Upwork portfolio piece, but the brief doesn't say whether the case study lives in the repo README, a separate blog post/Medium article, or gets attached directly to an Upwork profile/proposal. Affects how much the Day 7 writeup should stand alone vs. link back to the repo.
 
 ## Repository Folder Structure

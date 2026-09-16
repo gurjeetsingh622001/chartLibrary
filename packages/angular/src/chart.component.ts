@@ -13,8 +13,8 @@ import {
   PLATFORM_ID,
   SimpleChanges,
 } from '@angular/core';
-import { Chart as CoreChart } from '@chart-lib/core';
-import type { ChartConfig, ChartEventMap } from '@chart-lib/core';
+import { Chart as CoreChart } from '@sulacharts/core';
+import type { ChartConfig, ChartEventMap } from '@sulacharts/core';
 
 /**
  * Thin Angular binding over the framework-agnostic core engine — mirrors
@@ -29,12 +29,9 @@ import type { ChartConfig, ChartEventMap } from '@chart-lib/core';
  * ngZone.runOutsideAngular() so those internal DOM operations don't
  * re-enter Angular's zone; the only things Angular is told about are the
  * @Output emissions, explicitly re-entered via ngZone.run().
- *
- * Selector is a placeholder pending the library name decision (see
- * "Open Decisions" in the project brief).
  */
 @Component({
-  selector: 'chart-lib',
+  selector: 'sula-chart',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: '',

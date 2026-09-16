@@ -1,4 +1,4 @@
-import type { ChartConfig } from '@chart-lib/core';
+import type { ChartConfig } from '@sulacharts/core';
 
 // Shared between the React and Angular demo apps deliberately — visual
 // parity between the two wrappers is proven by literally rendering the

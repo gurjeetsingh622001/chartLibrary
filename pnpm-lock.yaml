@@ -38,13 +38,13 @@ importers:
       '@angular/platform-browser':
         specifier: ^18.2.0
         version: 18.2.14(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.14.10))
-      '@chart-lib/angular':
+      '@sulacharts/angular':
         specifier: workspace:*
         version: link:../../packages/angular
-      '@chart-lib/core':
+      '@sulacharts/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@chart-lib/react':
+      '@sulacharts/react':
         specifier: workspace:*
         version: link:../../packages/react
       react:
@@ -78,7 +78,7 @@ importers:
 
   packages/angular:
     dependencies:
-      '@chart-lib/core':
+      '@sulacharts/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -115,7 +115,7 @@ importers:
 
   packages/react:
     dependencies:
-      '@chart-lib/core':
+      '@sulacharts/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:

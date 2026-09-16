@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
-import { Chart as CoreChart } from '@chart-lib/core';
-import type { ChartConfig, ChartEventMap } from '@chart-lib/core';
+import { Chart as CoreChart } from '@sulacharts/core';
+import type { ChartConfig, ChartEventMap } from '@sulacharts/core';
 
 export interface ChartProps<T = unknown> {
   config: ChartConfig<T>;

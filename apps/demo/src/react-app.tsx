@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Chart } from '@chart-lib/react';
+import { Chart } from '@sulacharts/react';
 import { createBarConfig, createLineConfig, createPieConfig, randomizeLineConfig } from './sample-data';
 
 export function ReactDemoApp() {

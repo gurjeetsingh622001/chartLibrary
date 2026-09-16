@@ -1,13 +1,13 @@
-# @chart-lib/core *(placeholder name)*
+# @sulacharts/core
 
 Framework-agnostic SVG charting engine — line, bar (grouped/stacked), and pie/donut charts, with no dependency on React, Angular, or anything else. See the [project README](../../README.md) and [case study](../../docs/CASE_STUDY.md) for the full story.
 
-Not published to npm yet. This package name is a placeholder — see [Open Decisions](../../chart-library-project-brief.md#open-decisions-need-your-input-not-something-to-silently-default) in the project brief.
+Not published to npm yet.
 
 ## Install
 
 ```
-pnpm add @chart-lib/core
+pnpm add @sulacharts/core
 ```
 
 (Once published — for now, consume it via the pnpm workspace, as `packages/react`, `packages/angular`, and `apps/demo` all do.)
@@ -15,7 +15,7 @@ pnpm add @chart-lib/core
 ## Usage
 
 ```ts
-import { Chart } from '@chart-lib/core';
+import { Chart } from '@sulacharts/core';
 
 const container = document.getElementById('chart')!;
 

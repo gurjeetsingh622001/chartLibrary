@@ -14,7 +14,7 @@ export default defineConfig({
       // be built first (a plain workspace:* dependency would resolve
       // through package.json "exports" -> dist/, which may not exist yet
       // on a fresh checkout or in CI before a build step runs).
-      '@chart-lib/core': path.resolve(dirname, '../core/src/index.ts'),
+      '@sulacharts/core': path.resolve(dirname, '../core/src/index.ts'),
     },
   },
   test: {

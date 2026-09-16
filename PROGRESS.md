@@ -2,8 +2,8 @@
 
 Tracks the 7-day plan from [chart-library-project-brief.md](chart-library-project-brief.md). Check items off as they're done; add notes inline when something changes from the original plan.
 
-## Needs your decision (blocks Day 0 naming, not the architecture work)
-- [ ] Library name
+## Needs your decision
+- [x] Library name — **SulaCharts** (`@sulacharts/*` scope, `<sula-chart>` Angular selector). Renamed across every package, source file, config, and doc.
 - [ ] Where the case study gets published (README / blog post / Upwork profile)
 
 ## Day 0 — Setup
@@ -44,7 +44,7 @@ Tracks the 7-day plan from [chart-library-project-brief.md](chart-library-projec
 - [x] StrictMode double-invoke guard — no guard flag needed; destroy() fully tears down the container/listeners so re-running the mount effect is idempotent by construction (a skip-flag would just mask what StrictMode is trying to surface). Verified with a test that renders inside `<StrictMode>` and asserts exactly one `<svg>`/`<path>` exists, not zero or two.
 - [x] `onDataPointClick`/`onDataPointHover` props map onto the core's `chart.on`/`chart.off` pub-sub — the cross-framework event API decision from Day 0 paying off as intended
 - [x] Dev tooling: `eslint-plugin-react-hooks` added (workspace-wide config, scoped to `packages/react/**`) so `exhaustive-deps` actually enforces the intentional mount-effect dependency omission rather than silently drifting
-- [x] Test setup resolves `@chart-lib/core` to its source via a Vite alias (`packages/react/vitest.config.ts`) rather than requiring core to be built first — `pnpm test` works standalone on a fresh checkout; `tsc --noEmit` still typechecks against core's built `.d.ts` (its public surface), so build order only matters for typecheck, not tests
+- [x] Test setup resolves `@sulacharts/core` to its source via a Vite alias (`packages/react/vitest.config.ts`) rather than requiring core to be built first — `pnpm test` works standalone on a fresh checkout; `tsc --noEmit` still typechecks against core's built `.d.ts` (its public surface), so build order only matters for typecheck, not tests
 - [x] 8 tests: mount/StrictMode/patch-in-place/structural-rebuild/destroy/event wiring (click, hover, and handler removal)
 
 ## Day 5 — Angular wrapper

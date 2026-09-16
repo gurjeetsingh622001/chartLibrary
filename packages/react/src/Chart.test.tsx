@@ -1,7 +1,7 @@
 import { StrictMode, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ChartConfig } from '@chart-lib/core';
+import type { ChartConfig } from '@sulacharts/core';
 import { Chart } from './Chart';
 
 function lineConfig(overrides: Partial<ChartConfig> = {}): ChartConfig {

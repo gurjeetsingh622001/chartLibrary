@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
-import { ChartComponent } from '@chart-lib/angular';
-import type { ChartConfig } from '@chart-lib/core';
+import { ChartComponent } from '@sulacharts/angular';
+import type { ChartConfig } from '@sulacharts/core';
 import { createBarConfig, createLineConfig, createPieConfig, randomizeLineConfig } from './sample-data';
 
 @Component({
@@ -12,7 +12,7 @@ import { createBarConfig, createLineConfig, createPieConfig, randomizeLineConfig
       <div class="chart-card">
         <h3>Line — live-updating</h3>
         <div #lineContainer>
-          <chart-lib [config]="lineConfig"></chart-lib>
+          <sula-chart [config]="lineConfig"></sula-chart>
         </div>
         <div class="controls">
           <button type="button" (click)="randomizeNow()">Randomize now</button>
@@ -25,11 +25,11 @@ import { createBarConfig, createLineConfig, createPieConfig, randomizeLineConfig
       </div>
       <div class="chart-card">
         <h3>Bar — stacked</h3>
-        <chart-lib [config]="barConfig"></chart-lib>
+        <sula-chart [config]="barConfig"></sula-chart>
       </div>
       <div class="chart-card">
         <h3>Pie — donut</h3>
-        <chart-lib [config]="pieConfig"></chart-lib>
+        <sula-chart [config]="pieConfig"></sula-chart>
       </div>
     </div>
   `,
