@@ -68,10 +68,10 @@ Tracks the 7-day plan from [chart-library-project-brief.md](chart-library-projec
 - [x] Also found (in the demo's own code, not the library): the React proof-check had a StrictMode-only race — reading the "before" `<svg>` reference passively on every render could occasionally capture it during React 18 dev-mode's double-invoke mount churn, producing a false "svg changed" warning on the very first check. Fixed by capturing the "before" reference explicitly at the moment a randomize is triggered instead of passively via a mount-time effect. Verified fixed across repeated fresh-page-load runs.
 
 ## Day 7 — Documentation and case study
-- [ ] Written case study (problem, why cross-framework consistency matters, code snippets)
-- [ ] Root README (setup, architecture, screenshots/GIFs)
-- [ ] Per-package README (core, react, angular) with install + minimal usage example
-- [ ] If actually publishing the angular package: swap its tsup build for `ng-packagr` (needed for Ivy partial-compilation/Angular Linker-compatible output — see Day 5 notes). Not required for the demo app, which consumes it via the pnpm workspace directly.
+- [x] Written case study ([docs/CASE_STUDY.md](docs/CASE_STUDY.md)) — problem, architecture, the `update()`/zone.js technical decisions with real code snippets pulled from the actual source (not paraphrased), and the two real bugs Day 6's browser verification found, written up honestly rather than smoothed over
+- [x] Root README — pitch, architecture, a real screenshot from the actual browser-verified demo run (`docs/screenshots/`), setup instructions, package table, status/open-decisions pointer
+- [x] Per-package README (core, react, angular) with install + a minimal usage example matching the real current API (checked against source, not written from memory) — the angular one is explicit that the package isn't npm-publish-ready as built (tsup vs. `ng-packagr`), not just quietly hoping nobody notices
+- [ ] If actually publishing the angular package: swap its tsup build for `ng-packagr` (needed for Ivy partial-compilation/Angular Linker-compatible output — see Day 5/6 notes, this turned out to matter more than originally scoped)
 
 ## Deferred (post-portfolio, not week-1 scope)
 - [ ] Canvas/WebGL rendering mode
