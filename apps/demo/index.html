@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chart Library Demo — React vs Angular</title>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>Cross-Framework Chart Library</h1>
+        <p>
+          The exact same <code>ChartConfig</code> object, rendered by the React wrapper and the Angular
+          wrapper side by side. The line chart on each side updates in place — same <code>&lt;svg&gt;</code>
+          node, not a teardown/rebuild — which is the whole point of this project.
+        </p>
+      </header>
+      <main>
+        <section class="framework-section">
+          <h2>React</h2>
+          <div id="react-root"></div>
+        </section>
+        <section class="framework-section">
+          <h2>Angular</h2>
+          <chart-demo-root></chart-demo-root>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

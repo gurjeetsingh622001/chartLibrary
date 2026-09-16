@@ -49,8 +49,16 @@ export class ChartComponent<T = unknown> implements AfterViewInit, OnChanges, On
   private readonly isBrowser: boolean;
 
   constructor(
-    private readonly elementRef: ElementRef<HTMLElement>,
-    private readonly ngZone: NgZone,
+    // Every parameter is explicitly @Inject()-ed, including ElementRef and
+    // NgZone which Angular could normally infer from the parameter's type.
+    // That inference relies on TypeScript's `emitDecoratorMetadata`
+    // (design:paramtypes) — which esbuild does not implement, since it has
+    // no type checker to resolve it — so this package's tsup/esbuild build
+    // (see the "known gap" note in package.json) would otherwise produce a
+    // component Angular's DI can't actually construct (NG0202 at runtime).
+    // Explicit tokens sidestep the need for that metadata entirely.
+    @Inject(ElementRef) private readonly elementRef: ElementRef<HTMLElement>,
+    @Inject(NgZone) private readonly ngZone: NgZone,
     // Not using @angular/common's isPlatformBrowser() here — that pulls in
     // Ivy partially-compiled code (PlatformNavigation) which needs the
     // Angular Linker or the JIT compiler to load outside a full Angular
