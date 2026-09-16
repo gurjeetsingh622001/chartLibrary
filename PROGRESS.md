@@ -60,7 +60,7 @@ Tracks the 7-day plan from [chart-library-project-brief.md](chart-library-projec
 ## Day 6 — Polish and demo page
 - [ ] Demo page: all chart types, React and Angular side by side
 - [ ] Live-update scenario (push/randomize data on an interval) on both React and Angular versions — this is what actually proves the "no teardown/rebuild" differentiator, not just static rendering
-- [ ] ResizeObserver-based responsive handling
+- [x] ResizeObserver-based responsive handling — implemented in the **core engine**, not the wrappers (`config.responsive: true` + no fixed width/height), so both React and Angular get it automatically with zero wrapper-specific code. A resize triggers the same `patch()` path as a data update (in-place relayout, same `<svg>` node), not a rebuild. Explicit width/height always wins over container size if both are set. Tested with a fake `ResizeObserver` (real DOM test environments don't implement one meaningfully) — 6 tests: observes only when eligible, disconnects on destroy, starts/stops via `update()`, and relayouts in place on a simulated resize.
 - [ ] Visual parity check: React and Angular render identically for same config
 
 ## Day 7 — Documentation and case study

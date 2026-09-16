@@ -104,11 +104,13 @@ export class Chart<T = unknown> {
   private pieState: PieRenderState | null = null;
   private mounted = false;
   private tooltipEl: HTMLDivElement | null = null;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(container: HTMLElement, config: ChartConfig<T>) {
     this.container = container;
     this.config = config;
     this.renderFull();
+    this.syncResizeObserver();
   }
 
   update(partial: ChartConfigUpdate<T>): void {
@@ -120,9 +122,12 @@ export class Chart<T = unknown> {
     } else {
       this.patch();
     }
+    this.syncResizeObserver();
   }
 
   destroy(): void {
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
     this.listeners.clear();
     this.container.innerHTML = '';
     this.state = null;
@@ -130,6 +135,35 @@ export class Chart<T = unknown> {
     this.mounted = false;
     this.tooltipEl = null;
   }
+
+  // config.responsive opts into tracking the container's size instead of a
+  // fixed width/height — computeLayout()/computePieLayout() already read
+  // container.clientWidth/clientHeight fresh whenever config.width/height
+  // is unset, so all a resize needs to do is trigger the same patch() path
+  // used for data updates (an in-place relayout, not a rebuild). If both
+  // responsive and explicit width/height are set, explicit wins and resize
+  // events are a no-op — nothing to skip that would need extra guarding.
+  private syncResizeObserver(): void {
+    const shouldObserve =
+      this.config.responsive === true &&
+      (this.config.width === undefined || this.config.height === undefined) &&
+      typeof ResizeObserver !== 'undefined';
+    if (shouldObserve && !this.resizeObserver) {
+      this.resizeObserver = new ResizeObserver(() => this.handleResize());
+      this.resizeObserver.observe(this.container);
+    } else if (!shouldObserve && this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+  }
+
+  private handleResize = (): void => {
+    if (this.config.type === 'pie') {
+      this.patchPie();
+    } else {
+      this.patch();
+    }
+  };
 
   on<K extends keyof ChartEventMap<T>>(event: K, handler: ChartEventHandler<T, K>): void {
     if (!this.listeners.has(event)) {

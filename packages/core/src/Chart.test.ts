@@ -1,5 +1,5 @@
 /** @vitest-environment happy-dom */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Chart } from './Chart';
 import type { ChartConfig } from './types';
 
@@ -329,6 +329,102 @@ describe('Chart (pie)', () => {
   it('renders one legend item per slice when the legend is enabled', () => {
     const chart = new Chart(container, pieConfig({ legend: { enabled: true } }));
     expect(container.querySelectorAll('.chart-legend text').length).toBe(2);
+    chart.destroy();
+  });
+});
+
+describe('Chart (responsive)', () => {
+  let container: HTMLElement;
+  let observed: HTMLElement[];
+  let triggerResize: () => void;
+
+  class FakeResizeObserver {
+    constructor(private callback: () => void) {
+      triggerResize = () => this.callback();
+    }
+    observe(el: HTMLElement) {
+      observed.push(el);
+    }
+    unobserve() {}
+    disconnect() {
+      observed = [];
+    }
+  }
+
+  beforeEach(() => {
+    container = createContainer();
+    observed = [];
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function lineConfig(overrides: Partial<ChartConfig> = {}): ChartConfig {
+    return {
+      type: 'line',
+      animation: { enabled: false },
+      responsive: true,
+      series: [
+        {
+          id: 's1',
+          name: 'Series 1',
+          data: [
+            { x: 'Jan', y: 1 },
+            { x: 'Feb', y: 5 },
+          ],
+        },
+      ],
+      ...overrides,
+    };
+  }
+
+  it('observes the container when responsive is true and width/height are unset', () => {
+    const chart = new Chart(container, lineConfig());
+    expect(observed).toEqual([container]);
+    chart.destroy();
+  });
+
+  it('does not observe when width and height are both set explicitly', () => {
+    const chart = new Chart(container, lineConfig({ width: 400, height: 300 }));
+    expect(observed).toEqual([]);
+    chart.destroy();
+  });
+
+  it('does not observe when responsive is not set', () => {
+    const chart = new Chart(container, lineConfig({ responsive: undefined }));
+    expect(observed).toEqual([]);
+    chart.destroy();
+  });
+
+  it('relayouts (same <svg> node, updated size) when the container is resized', () => {
+    const chart = new Chart(container, lineConfig());
+    const svgBefore = container.querySelector('svg');
+
+    Object.defineProperty(container, 'clientWidth', { value: 900, configurable: true });
+    Object.defineProperty(container, 'clientHeight', { value: 500, configurable: true });
+    triggerResize();
+
+    const svgAfter = container.querySelector('svg');
+    expect(svgAfter).toBe(svgBefore);
+    expect(svgAfter?.getAttribute('width')).toBe('900');
+    expect(svgAfter?.getAttribute('height')).toBe('500');
+    chart.destroy();
+  });
+
+  it('disconnects the observer on destroy', () => {
+    const chart = new Chart(container, lineConfig());
+    expect(observed).toEqual([container]);
+    chart.destroy();
+    expect(observed).toEqual([]);
+  });
+
+  it('starts observing if responsive is turned on via update()', () => {
+    const chart = new Chart(container, lineConfig({ responsive: undefined }));
+    expect(observed).toEqual([]);
+    chart.update({ responsive: true });
+    expect(observed).toEqual([container]);
     chart.destroy();
   });
 });
