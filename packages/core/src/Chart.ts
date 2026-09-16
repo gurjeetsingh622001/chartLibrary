@@ -276,8 +276,7 @@ export class Chart<T = unknown> {
   }
 
   private renderEmptyState(): void {
-    const width = this.config.width ?? (this.container.clientWidth || DEFAULT_WIDTH);
-    const height = this.config.height ?? (this.container.clientHeight || DEFAULT_HEIGHT);
+    const { width, height } = this.resolveSize();
     const svg = createSvgElement('svg', { width, height, viewBox: `0 0 ${width} ${height}` });
     const text = createSvgElement('text', {
       x: width / 2,
@@ -778,8 +777,7 @@ export class Chart<T = unknown> {
     const points = cleanPoints(series.data).filter((p) => p.y > 0);
     if (points.length === 0) return null;
 
-    const width = this.config.width ?? (this.container.clientWidth || DEFAULT_WIDTH);
-    const height = this.config.height ?? (this.container.clientHeight || DEFAULT_HEIGHT);
+    const { width, height } = this.resolveSize();
     const titleSpace = this.config.title?.text ? 24 : 0;
     const legendSpace = this.config.legend?.enabled ? 32 : 0;
     const cx = width / 2;
@@ -832,6 +830,29 @@ export class Chart<T = unknown> {
     if (this.tooltipEl) this.tooltipEl.style.display = 'none';
   }
 
+  // Only reads the container's actual size when responsive is explicitly
+  // on — otherwise always falls back to the fixed default, never to
+  // container.clientWidth/clientHeight. Those can be misleadingly
+  // non-zero for a container that has no *externally imposed* size (no
+  // explicit CSS height, not inside a sized flex/grid parent): any
+  // padding or border alone gives an "empty" div a real clientHeight
+  // greater than zero, so `clientHeight || DEFAULT_HEIGHT` doesn't
+  // reliably catch the "nothing has actually sized this yet" case — found
+  // by testing against a real styled page, not the bare test containers
+  // used in this package's own unit tests. Reading container size is only
+  // meaningful under `responsive: true`, where the consumer is expected
+  // to have given the container a real size from something other than
+  // the chart's own content (a fixed height, a flex/grid layout, vh
+  // units, etc.) — the same assumption the ResizeObserver hookup already
+  // makes.
+  private resolveSize(): { width: number; height: number } {
+    const useContainerSize = this.config.responsive === true;
+    const width = this.config.width ?? (useContainerSize ? this.container.clientWidth || DEFAULT_WIDTH : DEFAULT_WIDTH);
+    const height =
+      this.config.height ?? (useContainerSize ? this.container.clientHeight || DEFAULT_HEIGHT : DEFAULT_HEIGHT);
+    return { width, height };
+  }
+
   private computeLayout(): Layout<T> | null {
     // "No data" (the empty-state placeholder) means there is nothing to
     // plot anywhere, regardless of visibility — toggling every series off
@@ -848,8 +869,7 @@ export class Chart<T = unknown> {
     // a default range while nothing is shown.
     const domainSeries = visibleSeriesWithData.length > 0 ? visibleSeriesWithData : this.config.series;
 
-    const width = this.config.width ?? (this.container.clientWidth || DEFAULT_WIDTH);
-    const height = this.config.height ?? (this.container.clientHeight || DEFAULT_HEIGHT);
+    const { width, height } = this.resolveSize();
     const margin = { ...DEFAULT_MARGIN, ...this.config.margin };
 
     const plotLeft = margin.left;

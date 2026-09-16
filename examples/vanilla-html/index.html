@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SulaCharts — Plain HTML/JS Example</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 48px 20px 80px;
+        color: #1f2937;
+        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+      }
+      header {
+        margin-bottom: 40px;
+      }
+      h1 {
+        font-size: 2.25rem;
+        margin: 0 0 8px;
+        background: linear-gradient(90deg, #4338ca, #2563eb);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        display: inline-block;
+      }
+      header p {
+        color: #4b5563;
+        line-height: 1.6;
+        max-width: 640px;
+        font-size: 1.02rem;
+      }
+      code {
+        background: #e5e7eb;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.9em;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #eef2ff;
+        color: #4338ca;
+        border: 1px solid #c7d2fe;
+        border-radius: 999px;
+        padding: 4px 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+      }
+      .card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        transition: box-shadow 0.2s ease;
+      }
+      .card:hover {
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      }
+      .card h2 {
+        font-size: 1rem;
+        margin: 0 0 4px;
+        color: #111827;
+      }
+      .card .subtitle {
+        font-size: 0.82rem;
+        color: #9ca3af;
+        margin: 0 0 14px;
+      }
+      .chart {
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 14px;
+      }
+      button {
+        cursor: pointer;
+        border: none;
+        background: linear-gradient(90deg, #4338ca, #2563eb);
+        color: white;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: opacity 0.15s ease;
+      }
+      button:hover {
+        opacity: 0.9;
+      }
+      button:active {
+        opacity: 0.75;
+      }
+      .proof {
+        margin: 0;
+        font-size: 0.78rem;
+        font-family: ui-monospace, monospace;
+        color: #6b7280;
+      }
+      footer {
+        margin-top: 48px;
+        font-size: 0.85rem;
+        color: #9ca3af;
+        text-align: center;
+      }
+      footer a {
+        color: #4338ca;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="badge">⚡ No build step · loaded straight from npm</div>
+      <h1>SulaCharts</h1>
+      <p>
+        A framework-agnostic SVG charting engine. This entire page is one HTML file — no bundler,
+        no <code>npm install</code>. <code>@sulacharts/core</code> is imported directly from a CDN
+        as a native ES module. View source to see the whole thing.
+      </p>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Line — live-updating</h2>
+        <p class="subtitle">Monthly Revenue</p>
+        <div class="chart" id="line-chart"></div>
+        <div class="controls">
+          <button id="randomize" type="button">Randomize data</button>
+          <p class="proof" id="proof">same node? —</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Bar — stacked</h2>
+        <p class="subtitle">Team Output</p>
+        <div class="chart" id="bar-chart"></div>
+      </div>
+
+      <div class="card">
+        <h2>Pie — donut</h2>
+        <p class="subtitle">Traffic Sources</p>
+        <div class="chart" id="pie-chart"></div>
+      </div>
+    </div>
+
+    <footer>
+      <a href="https://www.npmjs.com/package/@sulacharts/core" target="_blank" rel="noopener">@sulacharts/core</a>
+      on npm
+    </footer>
+
+    <script type="module">
+      import { Chart } from 'https://cdn.jsdelivr.net/npm/@sulacharts/core@0.1.0/dist/index.js';
+
+      const lineContainer = document.getElementById('line-chart');
+      const lineChart = new Chart(lineContainer, {
+        type: 'line',
+        height: 260,
+        legend: { enabled: true },
+        tooltip: { enabled: true },
+        series: [
+          {
+            id: 'revenue',
+            name: 'Revenue',
+            line: { curve: 'monotone' },
+            data: [
+              { x: 'Jan', y: 42 },
+              { x: 'Feb', y: 58 },
+              { x: 'Mar', y: 51 },
+              { x: 'Apr', y: 67 },
+              { x: 'May', y: 73 },
+              { x: 'Jun', y: 61 },
+            ],
+          },
+        ],
+      });
+
+      new Chart(document.getElementById('bar-chart'), {
+        type: 'bar',
+        height: 260,
+        legend: { enabled: true },
+        tooltip: { enabled: true },
+        series: [
+          {
+            id: 'team-a',
+            name: 'Team A',
+            bar: { stacked: true },
+            data: [
+              { x: 'Q1', y: 12 },
+              { x: 'Q2', y: 19 },
+              { x: 'Q3', y: 14 },
+              { x: 'Q4', y: 22 },
+            ],
+          },
+          {
+            id: 'team-b',
+            name: 'Team B',
+            bar: { stacked: true },
+            data: [
+              { x: 'Q1', y: 8 },
+              { x: 'Q2', y: 11 },
+              { x: 'Q3', y: 16 },
+              { x: 'Q4', y: 9 },
+            ],
+          },
+        ],
+      });
+
+      new Chart(document.getElementById('pie-chart'), {
+        type: 'pie',
+        height: 260,
+        legend: { enabled: true },
+        tooltip: { enabled: true },
+        series: [
+          {
+            id: 'sources',
+            name: 'Traffic',
+            pie: { innerRadius: 0.55, labelPosition: 'outside' },
+            data: [
+              { x: 'Organic', y: 45 },
+              { x: 'Paid', y: 25 },
+              { x: 'Referral', y: 15 },
+              { x: 'Social', y: 15 },
+            ],
+          },
+        ],
+      });
+
+      // update() patches the existing <svg>/<path> in place instead of
+      // rebuilding the chart — this checks the actual DOM node to prove it,
+      // rather than just asserting it in prose.
+      const proofEl = document.getElementById('proof');
+      let lastSvg = lineContainer.querySelector('svg');
+
+      document.getElementById('randomize').addEventListener('click', () => {
+        lineChart.update({
+          series: [
+            {
+              id: 'revenue',
+              name: 'Revenue',
+              data: [
+                { x: 'Jan', y: Math.round(20 + Math.random() * 60) },
+                { x: 'Feb', y: Math.round(20 + Math.random() * 60) },
+                { x: 'Mar', y: Math.round(20 + Math.random() * 60) },
+                { x: 'Apr', y: Math.round(20 + Math.random() * 60) },
+                { x: 'May', y: Math.round(20 + Math.random() * 60) },
+                { x: 'Jun', y: Math.round(20 + Math.random() * 60) },
+              ],
+            },
+          ],
+        });
+        const svgNow = lineContainer.querySelector('svg');
+        proofEl.textContent = svgNow === lastSvg ? 'same node ✅ patched, not rebuilt' : 'node changed ⚠️';
+        lastSvg = svgNow;
+      });
+    </script>
+  </body>
+</html>

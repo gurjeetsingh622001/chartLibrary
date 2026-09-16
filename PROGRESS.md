@@ -6,6 +6,14 @@ Tracks the 7-day plan from [chart-library-project-brief.md](chart-library-projec
 - [x] Library name — **SulaCharts** (`@sulacharts/*` scope, `<sula-chart>` Angular selector). Renamed across every package, source file, config, and doc.
 - [ ] Where the case study gets published (README / blog post / Upwork profile)
 
+## Publishing (post-Day-7)
+- [x] Created the `sulacharts` npm organization (not converting the existing personal account — that would have kept the wrong name and changed the personal login identity for no benefit)
+- [x] `@sulacharts/core@0.1.0` published
+- [x] **Real bug found by testing the published package in a real, independently-styled page** (`examples/vanilla-html`), not by trusting the build: a chart rendered at ~32px tall instead of the intended default 360px. Root cause — `container.clientHeight || DEFAULT_HEIGHT` assumed an "unsized" container reports `0`, but a real browser gives a container with only padding/border (no explicit CSS height) a genuinely non-zero `clientHeight` from that padding/border alone. The bare test containers in this package's own unit tests (and the aliased dev environment in `apps/demo`) never hit this because they don't carry that CSS. Fixed by only reading `container.clientWidth`/`clientHeight` when `config.responsive === true` — the case where the consumer is expected to have given the container a real, externally-imposed size — and always using the fixed default otherwise. 3 new regression tests. Version bumped to 0.1.1 (a real behavior fix, not equivalent to 0.1.0 — cannot ship as a patch to the *same* version, npm doesn't allow republishing a version number).
+- [ ] `@sulacharts/core@0.1.1` published (fix above, supersedes 0.1.0)
+- [ ] `@sulacharts/react` published (blocked on 0.1.1 above landing first, so its pinned `@sulacharts/core` dependency isn't pointing at the buggy version)
+- [x] `examples/vanilla-html` — a zero-build-step HTML/JS page loading `@sulacharts/core` directly from a CDN (jsdelivr), used specifically to test the *actual published npm artifact* rather than the workspace-aliased source `apps/demo` consumes. This is what caught the sizing bug above — worth keeping as a standing sanity check before any future publish, not just a one-off.
+
 ## Day 0 — Setup
 - [x] pnpm workspace scaffold (`packages/core`, `packages/react`, `packages/angular`, `apps/demo`) — react/angular/demo are placeholders pending Day 4-6
 - [x] Root tsconfig.base.json, pnpm-workspace.yaml

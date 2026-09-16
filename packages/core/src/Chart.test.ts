@@ -333,6 +333,61 @@ describe('Chart (pie)', () => {
   });
 });
 
+describe('Chart (size fallback)', () => {
+  // Regression test: found by loading the published package in a real
+  // browser (not this test's own DOM environment). A container with only
+  // padding/border and no explicit CSS height reports a small non-zero
+  // clientHeight in real browsers — happy-dom returns 0 for the same
+  // markup, which is why this needs an explicit mock rather than just
+  // relying on the DOM environment's own measurement.
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = createContainer();
+  });
+
+  function lineConfig(overrides: Partial<ChartConfig> = {}): ChartConfig {
+    return {
+      type: 'line',
+      animation: { enabled: false },
+      series: [{ id: 's1', name: 'S1', data: [{ x: 'Jan', y: 1 }] }],
+      ...overrides,
+    };
+  }
+
+  it('ignores a small non-zero container clientHeight when not responsive', () => {
+    Object.defineProperty(container, 'clientWidth', { value: 700, configurable: true });
+    Object.defineProperty(container, 'clientHeight', { value: 64, configurable: true });
+
+    const chart = new Chart(container, lineConfig());
+
+    const svg = container.querySelector('svg');
+    expect(svg?.getAttribute('height')).toBe('360'); // DEFAULT_HEIGHT, not the misleading 64
+    chart.destroy();
+  });
+
+  it('does use the container size when responsive is explicitly true', () => {
+    Object.defineProperty(container, 'clientWidth', { value: 700, configurable: true });
+    Object.defineProperty(container, 'clientHeight', { value: 64, configurable: true });
+
+    const chart = new Chart(container, lineConfig({ responsive: true }));
+
+    const svg = container.querySelector('svg');
+    expect(svg?.getAttribute('height')).toBe('64');
+    chart.destroy();
+  });
+
+  it('explicit config.height always wins over container size', () => {
+    Object.defineProperty(container, 'clientHeight', { value: 64, configurable: true });
+
+    const chart = new Chart(container, lineConfig({ height: 500, responsive: true }));
+
+    const svg = container.querySelector('svg');
+    expect(svg?.getAttribute('height')).toBe('500');
+    chart.destroy();
+  });
+});
+
 describe('Chart (responsive)', () => {
   let container: HTMLElement;
   let observed: HTMLElement[];
